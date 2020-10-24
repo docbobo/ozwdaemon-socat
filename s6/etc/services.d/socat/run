@@ -1,0 +1,41 @@
+#!/usr/bin/with-contenv bash 
+
+logConsole() {
+    fdmove -c 1 2 s6-echo "[$(basename `pwd`)]: $1";
+}
+
+SOCAT_ARGS=()
+
+VALIDATION_FAILED=false
+if [[ ! -z ${SOCAT_LINK} ]]; then
+    SOCAT_ARGS+=(pty,link=$SOCAT_LINK,raw,user=root,mode=777)
+else
+    logConsole "SOCAT_LINK not defined!"
+    VALIDATION_FAILED=true
+fi
+
+if [[ -z ${SOCAT_TYPE} ]]; then
+    logConsole "SOCAT_TYPE not defined!"
+    VALIDATION_FAILED=true
+fi
+
+if  [[ -z ${SOCAT_HOST} ]]; then
+    logConsole "SOCAT_HOST not defined!"
+    VALIDATION_FAILED=true
+fi
+
+if [[ -z ${SOCAT_PORT} ]]; then
+    logConsole "SOCAT_PORT not defined!"
+    VALIDATION_FAILED=true
+fi
+
+if [[ $VALIDATION_FAILED == true ]]; then
+    exit -5
+fi
+
+SOCAT_ARGS+=($SOCAT_TYPE:$SOCAT_HOST:$SOCAT_PORT)
+
+logConsole "Starting socat..."
+set -- /usr/bin/socat "${SOCAT_ARGS[@]}" "$@"
+logConsole "Executing: /usr/bin/socat ${SOCAT_ARGS[*]}"
+exec fdmove -c 2 1 "$@"
